@@ -101,3 +101,20 @@ write_control_file(output_file = "control.yaml",
 # Read the control file
 #######################
 dataset = read_cross2("control.yaml")
+map <- insert_pseudomarkers(dataset$pmap, step=10000)
+pr <- calc_genoprob(cross=dataset, map=map, error_prob = 0.002, cores=4)
+apr <- genoprob_to_alleleprob(probs=pr)
+
+xcovar <- get_x_covar(dataset)
+
+out <- scan1(genoprobs = pr, pheno=dataset$pheno, Xcovar = xcovar, cores=4)
+plot_scan1(out, map)
+operm <- scan1perm(genoprobs = pr, pheno = dataset$pheno, Xcovar = xcovar, n_perm = 1000)
+summary(operm)
+operm2 <- scan1perm(pr, dataset$pheno, Xcovar=xcovar, n_perm=1000,
+                    perm_Xsp=TRUE, chr_lengths=chr_lengths(map))
+
+summary(operm2, alpha=c(0.2, 0.05))
+operm <- scan1perm(pr, dataset$pheno, Xcovar=xcovar, n_perm=1000)
+thr = summary(operm)
+find_peaks(scan1_output = out, map = map, threshold = thr, prob = 0.95, expand2markers = FALSE)
